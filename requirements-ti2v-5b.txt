@@ -1,0 +1,43 @@
+# Core ML frameworks (NGC container provides torch 2.7.0, but pinned for clarity)
+# torch==2.7.0 is already installed in nvcr.io/nvidia/pytorch:25.02-py3
+# We list it here for documentation but will not reinstall
+
+# Diffusers and transformer libraries
+diffusers>=0.31.0
+transformers>=4.49.0
+tokenizers>=0.20.3
+accelerate>=1.1.1
+safetensors>=0.4.0
+huggingface-hub
+
+# Model architecture utilities
+einops==0.8.1
+peft
+
+# Image/video processing
+opencv-python>=4.9.0.80
+imageio[ffmpeg]
+imageio-ffmpeg
+Pillow
+
+# General utilities
+tqdm
+easydict
+ftfy
+pyyaml
+scipy
+
+# SentencePiece for T5 tokenizer
+sentencepiece
+
+# Video processing library
+decord
+
+# NumPy version compatibility (PyTorch 2.7.0 requires NumPy < 2.0)
+numpy<2.0
+
+# DashScope API for prompt expansion (optional but imported)
+dashscope
+
+# Note: flash-attn is compiled separately in Dockerfile with FLASH_ATTN_CUDA_ARCHS=120
+# Note: torch, torchvision, torchaudio are pre-installed in NGC container

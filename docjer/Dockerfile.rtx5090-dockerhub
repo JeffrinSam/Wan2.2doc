@@ -1,0 +1,87 @@
+# ==============================================================================
+# Wan2.2-TI2V-5B Docker Image for RTX 5090 (Blackwell Architecture)
+# ==============================================================================
+# Alternative Dockerfile using Docker Hub instead of NVIDIA NGC
+# Uses pytorch/pytorch which is more widely accessible
+# ==============================================================================
+
+# ==============================================================================
+# STAGE 1: Builder - Compile Flash Attention 2 with sm_120 support
+# ==============================================================================
+FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-devel AS builder
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    ninja-build \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set Flash Attention compilation flags for RTX 5090 (sm_120)
+# Note: CUDA 12.4 is close enough to 12.8 for Blackwell support
+ENV FLASH_ATTN_CUDA_ARCHS=120
+ENV MAX_JOBS=4
+ENV TORCH_CUDA_ARCH_LIST="12.0"
+
+# Install packaging tools needed for compilation
+RUN pip install --no-cache-dir packaging wheel ninja
+
+# Compile Flash Attention 2 from source
+# This takes 15-20 minutes but is necessary for Blackwell architecture
+RUN pip install flash-attn --no-build-isolation -v
+
+# ==============================================================================
+# STAGE 2: Runtime - Create production image
+# ==============================================================================
+FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
+
+LABEL maintainer="Wan2.2 TI2V-5B"
+LABEL description="Wan2.2 Text-Image-to-Video model optimized for RTX 5090"
+LABEL cuda.version="12.4"
+LABEL pytorch.version="2.5.1"
+
+# Copy compiled Flash Attention from builder stage
+COPY --from=builder /opt/conda/lib/python3.11/site-packages/flash_attn* /opt/conda/lib/python3.11/site-packages/
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements and install Python dependencies
+COPY requirements-ti2v-5b.txt /tmp/requirements-ti2v-5b.txt
+RUN pip install --no-cache-dir -r /tmp/requirements-ti2v-5b.txt
+
+# Copy application code (excluding model weights - those are mounted as volumes)
+COPY wan/ /app/wan/
+COPY generate.py /app/
+COPY examples/ /app/examples/
+
+# Create output directory
+RUN mkdir -p /app/outputs
+
+# Set environment variables for optimal performance
+ENV PYTHONUNBUFFERED=1
+ENV TQDM_POSITION=-1
+ENV TQDM_MININTERVAL=1
+ENV CUDA_DEVICE_ORDER=PCI_BUS_ID
+
+# Copy and setup entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Health check to verify GPU and CUDA availability
+# Note: RTX 5090 has compute capability 12.0, but Docker Hub image may report differently
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
+    CMD python -c "import torch; assert torch.cuda.is_available(), 'CUDA not available'" || exit 1
+
+# Expose no ports (runs as CLI tool)
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["/bin/bash"]

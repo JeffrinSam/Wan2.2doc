@@ -1,0 +1,34 @@
+ conda env list
+
+# conda environments:
+#
+base                 * /home/humanoid/miniforge3
+aero-gpu               /home/humanoid/miniforge3/envs/aero-gpu
+cosmos-transfer1       /home/humanoid/miniforge3/envs/cosmos-transfer1
+env_isaacsim           /home/humanoid/miniforge3/envs/env_isaacsim
+gr00t                  /home/humanoid/miniforge3/envs/gr00t
+openvla                /home/humanoid/miniforge3/envs/openvla
+robotqs                /home/humanoid/miniforge3/envs/robotqs
+torch                  /home/humanoid/miniforge3/envs/torch
+unitree_h1             /home/humanoid/miniforge3/envs/unitree_h1
+wan_env                /home/humanoid/miniforge3/envs/wan_env
+
+conda activate wan_env
+
+
+# Build the Docker image
+docker build -t wan2.2 .
+
+# Run the container with GPU access and volume mounts
+docker run --gpus all -it --rm \
+  -v $(pwd)/Wan2.2-TI2V-5B:/app/Wan2.2-TI2V-5B \
+  wan2.2
+
+# Inside the container, run the generation command
+python generate.py --task ti2v-5B --size 1280*704 --ckpt_dir ./Wan2.2-TI2V-5B --offload_model True --convert_model_dtype --t5_cpu --prompt "Two anthropomorphic cats in comfy boxing gear and bright gloves fight intensely on a spotlighted stage"
+
+
+
+
+
+ docker compose run --rm wan-ti2v   python generate.py     --task ti2v-5B     --size 1280*704     --frame_num 121     --sample_steps 40     --ckpt_dir /models/Wan2.2-TI2V-5B     --image /app/examples/31.jpg     --offload_model true     --convert_model_dtype     --t5_cpu     --prompt "The mobile Robot will go toward the man with yellow jacket"

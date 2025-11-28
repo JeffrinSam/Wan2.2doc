@@ -1,0 +1,66 @@
+# Model checkpoints (mount as volume instead)
+Wan2.2-TI2V-5B/
+Wan2.2-T2V-A14B/
+Wan2.2-I2V-A14B/
+Wan2.2-S2V-14B/
+Wan2.2-Animate-14B/
+*.safetensors
+*.pth
+*.bin
+
+# Generated outputs
+outputs/
+*.mp4
+*.avi
+*.webm
+*.mkv
+
+# Development files
+.git/
+.gitignore
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg-info/
+dist/
+build/
+
+# Environment files
+environment.yml
+environment2.yml
+environment.zip
+
+# Documentation (we'll add our own)
+*.md
+!README-DOCKER.md
+tutorial/
+assets/
+
+# Testing
+tests/
+.pytest_cache/
+.coverage
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-*
+
+# Misc
+.DS_Store
+Dockerfile
+docker-compose.yml
+build.log
+.cache/
+
+# Temporary files
+*.tmp
+*.log
+transferring/
+CACHED/
+ERROR/

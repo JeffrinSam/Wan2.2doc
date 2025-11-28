@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  wan-ti2v:
+    build:
+      context: .
+      dockerfile: Dockerfile.rtx5090
+    image: wan22-ti2v-5b:rtx5090
+    container_name: wan22-ti2v-5b
+
+    # NVIDIA GPU configuration
+    runtime: nvidia
+
+    environment:
+      # NVIDIA GPU settings
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+      # Python environment
+      - PYTHONUNBUFFERED=1
+      - TQDM_POSITION=-1
+      - TQDM_MININTERVAL=1
+
+      # CUDA settings
+      - CUDA_DEVICE_ORDER=PCI_BUS_ID
+
+    volumes:
+      # Model checkpoint (read-only to prevent accidental corruption)
+      - /home/humanoid/Downloads/Wan2.2/Wan2.2-TI2V-5B:/models/Wan2.2-TI2V-5B:ro
+
+      # Output directory (read-write for generated videos)
+      - ./outputs:/app/outputs:rw
+
+      # Example images for I2V (read-only)
+      - ./examples:/app/examples:ro
+
+    working_dir: /app
+
+    # Shared memory size (important for data loading)
+    shm_size: 16gb
+
+    # IPC mode for better CUDA performance
+    ipc: host
+
+    # Resource limits (optional, can be adjusted)
+    ulimits:
+      memlock: -1
+      stack: 67108864
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import torch; assert torch.cuda.is_available()"]
+      interval: 30s
+      timeout: 10s
+      start_period: 120s
+      retries: 3
+
+    # Don't start automatically - use docker-compose run for manual execution
+    profiles:
+      - manual
